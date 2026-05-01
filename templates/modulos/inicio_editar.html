@@ -1,0 +1,67 @@
+{% extends "plantilla.html" %}
+
+{% block content %}
+
+<section class="content-header">
+    <h1>EDITAR DATOS DEL INICIO</h1>
+</section>
+
+<section class=""content">
+    <div class="box">
+        <div class="box-body">
+
+            <form method="post" enctype="multipart/form-data">
+                <div class="row">
+
+                    <div class="col-md-6 col-xs-12">
+
+                        <h2>Días:</h2>
+                        <input type="text" class="form-control input-lg" name="dias" value="{{ datosInicio.dias }}">
+
+                        <div class="form-group">
+                            <h2>Horarios:</h2>
+                            Desde:
+                            <input type="time" class="form-control input-lg" name="horaInicio" value="{{ datosInicio.horaInicio }}">
+                            Hasta:
+                            <input type="time" class="form-control input-lg" name="horaFin" value="{{ datosInicio.horaFin }}">
+                        </div>
+
+                        <h2>Direccón:</h2>
+                        <input type="text" class="form-control input-lg" name="direccion" value="{{ datosInicio.direccion }}">
+                    
+                        <h2>Teléfono:</h2>
+                        <input type="text" class="form-control input-lg" name="telefono" value="{{ datosInicio.telefono }}">
+
+                        <h2>Correo:</h2>
+                        <input type="text" class="form-control input-lg" name="correo" value="{{ datosInicio.correo }}">
+
+
+                    </div>
+
+                    <div class="col-md-6 col-xs-12">
+                        <br><br>
+
+                        <h2>Logo:</h2>
+                        <input type="file" name="logo" class="form-control">
+
+                        {% if datosInicio.logo %}
+
+                            <img src="{{ url_for('static', filename=datosInicio.logo) }}" alt="nadita" width="200">
+
+                        {% endif %}
+
+                        <br><br>
+
+                        <button type="submit" class="btn btn-success">Guardar</button>
+
+                    </div>
+
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+</section>
+
+{% endblock %}

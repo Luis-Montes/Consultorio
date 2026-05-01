@@ -61,5 +61,115 @@ def logout():
     session.pop('user', None)
     return redirect(url_for('login'))
 
+# Mis Datos
+@app.route('/mis_datos', methods=["GET", "POST"])
+def mis_datos():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    
+    id_user = session['user']['id_user']
+    conn = mysql.connector.connect(**db_config)
+    cursor = conn.cursor(dictionary=True)
+
+    if request.method == 'POST':
+        name_user = request.form['name_user']
+        user = request.form['user']
+        document_user = request.form['document_user']
+        phone_user = request.form['phone_user']
+        passwordN = request.form['password_user']
+        
+
+        cursor.execute("SELECT id_user FROM users WHERE user = %s AND id_user != %s", (user, id_user))
+
+        if  cursor.fetchone():
+            flash("El usuario con este nombre ya existe.", "error")
+        else:
+            if passwordN.strip() != "":
+                passwordN = generate_password_hash(request.form['password_user'])
+                cursor.execute(""" UPDATE users SET name_user=%s, user=%s, document_user=%s, phone_user=%s, password_user=%s WHERE id_user = %s """,
+                               (name_user, user, document_user, phone_user, passwordN, id_user))
+                
+            else:
+                cursor.execute(""" UPDATE users SET name_user=%s, user=%s, document_user=%s, phone_user=%s WHERE id_user = %s """,
+                               (name_user, user, document_user, phone_user, id_user))
+            conn.commit()
+            flash("Datos Actualizados Correctamente", "success")
+
+    cursor.execute("SELECT * FROM users WHERE id_user = %s", (id_user,))
+
+    user = cursor.fetchone()
+    cursor.close()
+    conn.close()
+
+    return render_template('modulos/mis_datos.html', user=user)
+
+
+@app.route('/inicio', methods=["GET"])
+def inicio():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    
+    conn = mysql.connector.connect(**db_config)
+    cursor = conn.cursor(dictionary=True)
+    
+    cursor.execute("SELECT * FROM inicio WHERE id = 1")
+    datosInicio = cursor.fetchone()
+
+    conn.close()
+
+    return render_template('modulos/inicio.html', datosInicio=datosInicio)
+
+@app.route('/inicio-editar', methods=["GET", "POST"])
+def inicio_editar():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    
+    if session["user"]["rol_user"] != "Admin":
+        return redirect(url_for('inicio'))
+    
+    conn = mysql.connector.connect(**db_config)
+    cursor = conn.cursor(dictionary=True)
+    
+    cursor.execute("SELECT * FROM inicio WHERE id = 1")
+    datosInicio = cursor.fetchone()
+
+    if request.method == 'POST':
+        dias = request.form.get('dias')
+        horaInicio = request.form.get('horaInicio')
+        horaFin = request.form.get('horaFin')
+        telefono = request.form.get('telefono')
+        direccion = request.form.get('direccion')
+        correo = request.form.get('correo')
+
+        logo = request.files.get('logo')
+
+        static_path = os.path.abspath(os.path.join(app.root_path, '..', 'static'))
+
+        if not os.path.exists(static_path):
+            os.makedirs(static_path)
+        
+        if logo and logo.filename != '':
+            ruta = os.path.join(static_path, 'logo.png')
+            logo.save(ruta)
+
+            cursor.execute(""" UPDATE inicio SET dias=%s, horaInicio=%s, horaFin=%s, telefono=%s, direccion=%s, correo=%s, logo=%s WHERE id = 1 """, 
+            (dias, horaInicio, horaFin, telefono, direccion, correo, 'logo.png'))
+        
+        else:
+            cursor.execute(""" UPDATE inicio SET dias=%s, horaInicio=%s, horaFin=%s, telefono=%s, direccion=%s, correo=%s WHERE id = 1 """, 
+            (dias, horaInicio, horaFin, telefono, direccion, correo))
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        return redirect(url_for('inicio'))
+
+    cursor.close()
+    conn.close()
+
+    return render_template('modulos/inicio_editar.html', datosInicio=datosInicio)
+
+
 if __name__ == '__main__':
     app.run(debug=True)
