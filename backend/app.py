@@ -21,7 +21,7 @@ def index():
     if 'user' not in session:
         return redirect(url_for('login'))
         
-    return render_template('plantilla.html')
+    return redirect(url_for('inicio'))
 
 # Login ====================================
 @app.route('/login', methods=['GET', 'POST'])
@@ -47,7 +47,7 @@ def login():
                     'name_user': user["name_user"],
                     'rol_user': user['rol_user']
                 }
-                return redirect(url_for('index'))
+                return redirect(url_for('inicio'))
             else:
                 error= 'contraseña incorrecta'
         else:
@@ -103,7 +103,7 @@ def mis_datos():
 
     return render_template('modulos/mis_datos.html', user=user)
 
-
+# INICIO ============================================
 @app.route('/inicio', methods=["GET"])
 def inicio():
     if 'user' not in session:
@@ -118,6 +118,7 @@ def inicio():
     conn.close()
 
     return render_template('modulos/inicio.html', datosInicio=datosInicio)
+
 
 @app.route('/inicio-editar', methods=["GET", "POST"])
 def inicio_editar():
@@ -170,6 +171,51 @@ def inicio_editar():
 
     return render_template('modulos/inicio_editar.html', datosInicio=datosInicio)
 
+
+# CONSULTORIOS ============================================
+@app.route('/consultorios', methods=["GET", "POST"])
+def consultorios():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    
+    if session["user"]["rol_user"] not in ["Admin", "Secretaria "]:
+        return redirect(url_for('inicio'))
+    
+    conn = mysql.connector.connect(**db_config)
+    cursor = conn.cursor(dictionary=True)
+
+    # Añadir consultorios
+    if request.method == 'POST' and request.form.get('action') == 'agregar':
+        consultorioNuevo = request.form["consultorio"]
+        cursor.execute("INSERT INTO consultorios (consultorio) VALUES (%s)", (consultorioNuevo,))
+
+        conn.commit()
+        return redirect(url_for('consultorios'))
+
+    # Editar consultorio
+    if request.method == 'POST' and request.form.get('action') == 'editar':
+        idC = request.form['idC']
+        nombreC = request.form['consultorioEditar']
+
+        cursor.execute("UPDATE consultorios SET consultorio = %s WHERE id = %s", (nombreC, idC))
+        conn.commit()
+        return redirect(url_for('consultorios'))
+    
+    # ELiminar consultorio
+    if request.method == 'POST' and request.form.get('action') == 'eliminar':
+        idC = request.form['idC']
+        cursor.execute('DELETE FROM consultorios WHERE id = %s', (idC,))
+        conn.commit()
+        return redirect(url_for('consultorios'))
+
+    # Lista de consultorios
+    cursor.execute("SELECT * FROM consultorios")
+    consultorios = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template('modulos/consultorios.html', consultorios=consultorios)
 
 if __name__ == '__main__':
     app.run(debug=True)
