@@ -217,5 +217,69 @@ def consultorios():
 
     return render_template('modulos/consultorios.html', consultorios=consultorios)
 
+
+# DOCTORES ============================================
+@app.route('/doctores', methods=["GET", "POST"])
+def doctores():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    
+    if session["user"]["rol_user"] not in ["Admin", "Secretaria "]:
+        return redirect(url_for('inicio'))
+    
+    conn = mysql.connector.connect(**db_config)
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("SELECT * FROM consultorios")
+    consultorios = cursor.fetchall()
+
+    if request.method == 'POST':
+        name_user = request.form['name_user']
+        sexo = request.form['sexo']
+        id_consultorio = request.form['id_consultorio']
+        user = request.form['user']
+        password_user = generate_password_hash(request.form['password_user'])
+        rol_user = 'Doctor'
+        estado = 0
+
+        # Verificar que el usuario no exista
+        cursor.execute('SELECT id_user FROM users WHERE user = %s', (user,))
+        existe = cursor.fetchone()
+
+        if existe:
+            flash('El nombre de usuario ya esta registrado.', 'error')
+            cursor.close()
+            conn.close()
+
+            return redirect(url_for('doctores'))
+    
+        # Insertar doctor
+        cursor.execute('INSERT INTO users(name_user, password_user, rol_user, user, sexo, id_consultorio, estado) ' \
+        'VALUES(%s,%s,%s,%s,%s,%s,%s)', (name_user, password_user, rol_user, user, sexo, id_consultorio, estado))
+
+        conn.commit()
+
+        ultimo_id = cursor.lastrowid
+
+        cursor.execute('INSERT INTO doctores_horarios(id_doctor, horaInicio, horaFin) VALUES(%s,%s,%s)', (ultimo_id, 0, 0))
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        flash('Doctor creado correctamente.', 'success')
+        return redirect(url_for('doctores'))
+    
+
+    # Lista de doctores
+    cursor.execute("select * from users u left join consultorios c on c.id = u.id_consultorio where u.rol_user = 'Doctor' and u.estado = 0")
+
+    doctores = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    return render_template('modulos/doctores.html', consultorios=consultorios, doctores=doctores)
+
+
+
 if __name__ == '__main__':
     app.run(debug=True)
