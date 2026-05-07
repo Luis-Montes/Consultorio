@@ -1,0 +1,65 @@
+{% extends "plantilla.html" %}
+
+{% block content %}
+
+<section class="content-header">
+    <h1>CREAR PACIENTE</h1>
+</section>
+
+<section class="content">
+    <div class="box">
+
+        <div class="box-body">
+            {% with messages = get_flashed_messages (with_categories=true) %}
+                {% if messages %}
+
+                    {% for category, message in messages %}
+
+                        <div class="alert alert-{{ 'damage' if category == 'error' else 'success' }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                
+                {% endif %}
+            {% endwith %}
+
+            <form method="post" action="">
+                <div class="form-group">
+
+                    <h2>Nombre y apellido</h2>
+                    <input type="text" class="form-control input-lg" required name="name_user">
+
+                </div>
+
+                <div class="form-group">
+
+                    <h2>Documento</h2>
+                    <input type="text" class="form-control input-lg" required name="document_user">
+
+                </div>
+
+                <div class="form-group">
+
+                    <h2>Usuario</h2>
+                    <input type="text" class="form-control input-lg" required name="user">
+
+                </div>
+
+                <div class="form-group">
+
+                    <h2>Contraseña</h2>
+                    <input type="text" class="form-control input-lg" required name="password_user">
+
+                </div>
+
+                <br>
+
+                <button type="submit" class="btn btn-primary">Crear Paciente</button>
+            </form>
+
+        </div>
+    </div>
+
+</section>
+
+{% endblock %}

@@ -279,7 +279,78 @@ def doctores():
 
     return render_template('modulos/doctores.html', consultorios=consultorios, doctores=doctores)
 
+# Editar Doctores
+@app.route('/doctores/<int:id_doctor>/editar', methods=["POST"])
+def editar_doctor(id_doctor):
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    
+    
+    conn = mysql.connector.connect(**db_config)
+    cursor = conn.cursor(dictionary=True)
 
+    name_user = request.form["name_user"]
+    sexo = request.form["sexo"]
+    id_consultorio = request.form["id_consultorio"]
+    phone_user = request.form["phone_user"]
+    document_user = request.form["document_user"]
+
+    cursor.execute("UPDATE users SET name_user = %s, sexo = %s, id_consultorio = %s, phone_user = %s, document_user = %s WHERE id_user = %s",
+                   (name_user, sexo, id_consultorio, phone_user, document_user, id_doctor))
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    flash("El Doctor fue actualizado", "success")
+    return redirect(url_for('doctores'))
+
+#Eliminar Doctores
+@app.route('/eliminar_doctor/<int:id_doctor>', methods=["POST"])
+def eliminar_doctor(id_doctor):
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    
+    if session["user"]["rol_user"] not in ["Admin"]:
+        return redirect(url_for('inicio'))
+    
+    conn = mysql.connector.connect(**db_config)
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("UPDATE users SET estado = 1 WHERE id_user = %s", (id_doctor,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    flash("Doctor eliminado de forma correcta", "success")
+    return redirect(url_for('doctores'))
+
+# PACIENTES
+@app.route('/pacientes', methods=['GET'])
+def pacientes():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    
+    if session["user"]["rol_user"] not in ["Admin", "Secretaria "]:
+        return redirect(url_for('inicio'))
+    
+    conn = mysql.connector.connect(**db_config)
+    cursor = conn.cursor(dictionary=True)
+
+    return render_template('modulos/pacientes.html')
+
+@app.route('/crear_paciente', methods=["GET", "POST"])
+def crear_paciente():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    
+    if session["user"]["rol_user"] not in ["Admin", "Secretaria "]:
+        return redirect(url_for('inicio'))
+    
+    conn = mysql.connector.connect(**db_config)
+    cursor = conn.cursor(dictionary=True)
+
+    return render_template('modulos/crear_paciente.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
