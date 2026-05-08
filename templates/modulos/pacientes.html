@@ -20,16 +20,20 @@
                 <thead>
                     <tr>
                         <th>Nombre y Apellido</th>
-                        <th>Genero</th>
-                        <th>Consultorio</th>
                         <th>Usuario</th>
                         <th>Documento</th>
-                        <th>Teléfono</th>
-                        <th></th>
+                        <th>Editar / Borrar</th>
                     </tr>
                 </thead>
 
                 <tbody>
+                    {% for paciente in pacientes %}
+                        <tr>
+                            <td>{{ paciente.name_user }}</td>
+                            <td>{{ paciente.user }}</td>
+                            <td>{{ paciente.document_user }}</td>
+                        </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>

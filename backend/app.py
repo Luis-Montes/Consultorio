@@ -337,7 +337,13 @@ def pacientes():
     conn = mysql.connector.connect(**db_config)
     cursor = conn.cursor(dictionary=True)
 
-    return render_template('modulos/pacientes.html')
+    cursor.execute("SELECT id_user, user, name_user, document_user FROM users WHERE rol_user = 'Paciente' AND estado = 0")
+    pacientes = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template('modulos/pacientes.html', pacientes = pacientes)
 
 @app.route('/crear_paciente', methods=["GET", "POST"])
 def crear_paciente():
@@ -349,6 +355,40 @@ def crear_paciente():
     
     conn = mysql.connector.connect(**db_config)
     cursor = conn.cursor(dictionary=True)
+
+    if request.method == 'POST':
+        name_user = request.form["name_user"]
+        user = request.form["user"]
+        document_user = request.form["document_user"]
+        password_user = generate_password_hash(request.form["password_user"])
+        rol_user = 'Paciente'
+        estado = 0
+
+        cursor.execute("SELECT id_user FROM users WHERE user = %s", (user,))
+        existe_usuario = cursor.fetchone()
+
+        if existe_usuario:
+            flash("El usuario ya se encuentra registrado", 'error')
+            return redirect(url_for('crear_paciente'))
+        
+        cursor.execute("SELECT id_user FROM users WHERE document_user = %s", (document_user,))
+        existe_documento = cursor.fetchone()
+
+        if existe_documento:
+            flash("El Documento ya se encuentra registrado", 'error')
+            return redirect(url_for('crear_paciente'))
+        
+        cursor.execute('INSERT INTO users (name_user, user, document_user, password_user, rol_user, estado) VALUES (%s, %s, %s, %s, %s, %s)', 
+                       (name_user, user, document_user, password_user, rol_user, estado))
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        flash("Paciente registrado exitosamente", "success")
+        return redirect(url_for('crear_paciente'))
+        
+        
 
     return render_template('modulos/crear_paciente.html')
 
