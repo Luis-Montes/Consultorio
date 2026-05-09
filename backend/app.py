@@ -178,7 +178,7 @@ def consultorios():
     if 'user' not in session:
         return redirect(url_for('login'))
     
-    if session["user"]["rol_user"] not in ["Admin", "Secretaria "]:
+    if session["user"]["rol_user"] not in ["Admin", "Secretaria"]:
         return redirect(url_for('inicio'))
     
     conn = mysql.connector.connect(**db_config)
@@ -224,7 +224,7 @@ def doctores():
     if 'user' not in session:
         return redirect(url_for('login'))
     
-    if session["user"]["rol_user"] not in ["Admin", "Secretaria "]:
+    if session["user"]["rol_user"] not in ["Admin", "Secretaria"]:
         return redirect(url_for('inicio'))
     
     conn = mysql.connector.connect(**db_config)
@@ -331,7 +331,7 @@ def pacientes():
     if 'user' not in session:
         return redirect(url_for('login'))
     
-    if session["user"]["rol_user"] not in ["Admin", "Secretaria "]:
+    if session["user"]["rol_user"] not in ["Admin", "Secretaria"]:
         return redirect(url_for('inicio'))
     
     conn = mysql.connector.connect(**db_config)
@@ -391,6 +391,98 @@ def crear_paciente():
         
 
     return render_template('modulos/crear_paciente.html')
+
+@app.route('/editar_paciente/<int:id_paciente>', methods=["GET", "POST"])
+def editar_paciente(id_paciente):
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    
+    if session["user"]["rol_user"] not in ["Admin", "Secretaria", "Doctor"]:
+        return redirect(url_for('inicio'))
+
+    conn = mysql.connector.connect(**db_config)
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute('SELECT * FROM users where id_user = %s', (id_paciente,))
+    paciente = cursor.fetchone()
+
+    if not paciente:
+        flash('Paciente no encontrado', 'error')
+
+        conn.close()
+        return redirect(url_for('pacientes'))
+    
+    if request.method == 'POST':
+        name_user = request.form['name_user']
+        document_user = request.form['document_user']
+        user = request.form['user']
+        password_user = request.form['password_user']
+
+        # Validar Documento
+        cursor.execute("SELECT id_user FROM users WHERE document_user = %s AND id_user != %s", (document_user, id_paciente))
+
+        if cursor.fetchone():
+            flash("El Documento ya esta registrado", "error")
+            return render_template('modulos/editar_paciente.html', paciente = paciente)
+        
+
+        # Validar Usuario
+        cursor.execute("SELECT id_user FROM users WHERE user = %s AND id_user != %s", (user, id_paciente))
+
+        if cursor.fetchone():
+            flash("El Usuario ya esta registrado", "error")
+            return render_template('modulos/editar_paciente.html', paciente = paciente)
+        
+        if password_user.strip() != "":
+            password_user = generate_password_hash(password_user)
+
+            cursor.execute("UPDATE users SET name_user = %s, document_user = %s, user = %s, password_user = %s WHERE id_user = %s", 
+                           (name_user, document_user, user, password_user, id_paciente))
+
+            conn.commit()
+
+            cursor.execute('SELECT * FROM users where id_user = %s', (id_paciente,))
+            paciente = cursor.fetchone()
+
+            flash('El paciente ha sido actualizado', 'success')
+            return render_template('modulos/editar_paciente.html', paciente = paciente)
+        
+        else:
+            cursor.execute("UPDATE users SET name_user = %s, document_user = %s, user = %s WHERE id_user = %s", 
+                           (name_user, document_user, user, id_paciente))
+
+            conn.commit()
+        
+            cursor.execute('SELECT * FROM users where id_user = %s', (id_paciente,))
+            paciente = cursor.fetchone()
+
+            flash('El paciente ha sido actualizado', 'success')
+            return render_template('modulos/editar_paciente.html', paciente = paciente)
+
+    cursor.close()
+    conn.close()
+    
+    return render_template('modulos/editar_paciente.html', paciente = paciente)
+
+# Eliminar paciente
+@app.route('/eliminar_paciente/<int:id_paciente>', methods=['POST'])
+def eliminar_paciente(id_paciente):
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    
+    if session["user"]["rol_user"] == "Paciente":
+        return redirect(url_for('inicio'))
+
+    conn = mysql.connector.connect(**db_config)
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("DELETE FROM users WHERE id_user = %s", (id_paciente,))
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return redirect(url_for('pacientes'))
 
 if __name__ == '__main__':
     app.run(debug=True)

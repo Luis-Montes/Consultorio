@@ -32,6 +32,15 @@
                             <td>{{ paciente.name_user }}</td>
                             <td>{{ paciente.user }}</td>
                             <td>{{ paciente.document_user }}</td>
+                            <td>
+                                <a href="{{ url_for('editar_paciente', id_paciente=paciente.id_user) }}">
+                                    <button class="btn btn-warning">Editar</button>
+                                </a>
+
+                                <form method="post" action="{{ url_for('eliminar_paciente', id_paciente=paciente.id_user) }}" style="display: inline-block;">
+                                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('¿Estas seguro de eliminar al paciente?')">Eliminar</button>
+                                </form>
+                            </td>
                         </tr>
                     {% endfor %}
                 </tbody>
